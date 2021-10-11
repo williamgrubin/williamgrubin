@@ -1,0 +1,546 @@
+def main():
+    fp = open("sample_test.c",'r')
+    fp2 = open("stripped_code.text",'w')
+    fp3 = open("output.asm",'w')
+
+    i = 0
+
+    List = {}
+    
+    global ListTracker
+    ListTracker = 0
+    global NewTracker
+    NewTracker = 0
+
+    global ValueArray
+    ValueArray = {}
+
+    global ValueArrayIterator
+    ValueArrayIterator = 0
+
+    global ArrayByteIterator
+    ArrayByteIterator = 0
+
+    global ArrayRegister
+    ArrayRegister = ""
+
+    global RegisterList
+    RegisterList = ["$t0","$t1","$t2","$t3","$t4","$t5","$t6","$t7","$t8",
+                    "$t9","$s0","$s1","$s2","$s3","$s4","$s5","$s6","$s7"]
+
+    global VariableToRegisterList
+    VariableToRegisterList = {}
+
+    global RegisterToVariableList
+    RegisterToVariableList = {}
+
+    global VariableToValueList
+    VariableToValueList = {}
+
+    global RegisterToValueList
+    RegisterToValueList = {}
+
+    global PostDataString
+    PostDataString = ""
+
+    global OutputString
+    OutputString = ""
+
+    while True:
+        line = fp.readline()
+
+        if line == "":
+            break
+
+        line = line.strip()
+        word = line.split()
+
+        if (line.find('/') != -1 and line.find('=') == -1) or line.find('#') != -1 or line.find('{') != -1 or line.find('}') != -1 or line == "":
+            continue
+        else:
+            List[i] = line
+            i += 1
+
+    for line in List:
+        fp2.write("%s\n" % (List[line]))
+
+    fp2.close()
+    fp2 = open("stripped_code.text",'r')
+
+    line = ""
+    i = 1
+
+    while True:
+        line = fp2.readline()
+
+        if line == "" or line == "return 0;":
+            OutputString += "\n\n\tli $v0, 10\n\tsyscall\n\n\t.data"
+            FinalString = OutputString + PostDataString
+            fp3.write(FinalString)
+            break
+
+        line = line.strip()
+        word = line.split()
+
+        if line.find('int main()') != -1:
+            OutputString += MainFunctionDeclaration()
+        elif line.find('int') != -1 and line.find('=') == -1 and line.find('print') == -1 and line.find('[') == -1 and line.find(']') == -1:
+            OutputString += IntegerDeclaration(line)
+        elif line.find('int') != -1 and line.find('[') != -1 and line.find(']') != -1:
+            PostDataString += ArraySpace(line)  #call this first to determine global array name
+            OutputString += IntegerArrayDeclaration(line)
+        elif line.find('=') != -1 and line.find('[') == -1 and line.find(']') == -1 and line.find('+') == -1 and line.find('-') == -1 and line.find('*') == -1 and line.find('/') == -1:
+            OutputString += VariableInitialization(line)
+        elif line.find('=') != -1 and line.find('+') != -1 and line.find(']') == -1 and line.find('[') == -1 and line.find('-') == -1 and line.find('*') == -1 and line.find('/') == -1:
+            OutputString += AdditionOperation(line)
+        elif line.find('=') != -1 and line.find('-') != -1 and line.find(']') == -1 and line.find('[') == -1 and line.find('+') == -1 and line.find('*') == -1 and line.find('/') == -1:
+            OutputString += SubtractionOperation(line)
+        elif line.find('=') != -1 and line.find('-') == -1 and line.find(']') == -1 and line.find('[') == -1 and line.find('+') == -1 and line.find('*') != -1 and line.find('/') == -1:
+            OutputString += MultiplicationOperation(line)
+        elif line.find('=') != -1 and line.find('-') == -1 and line.find(']') == -1 and line.find('[') == -1 and line.find('+') == -1 and line.find('*') == -1 and line.find('/') != -1:
+            OutputString += DivisionOperation(line)
+        elif line.find('=') != -1 and line.find('-') == -1 and line.find(']') != -1 and line.find('[') != -1 and line.find('+') != -1 and line.find('*') == -1 and line.find('/') == -1:
+            function = "+"
+            OutputString += IntegerArrayWrite(line, function)
+        elif line.find('=') != -1 and line.find('-') != -1 and line.find(']') != -1 and line.find('[') != -1 and line.find('+') == -1 and line.find('*') == -1 and line.find('/') == -1:
+            function = "-"
+            OutputString += IntegerArrayWrite(line, function)
+        elif line.find('=') != -1 and line.find('-') == -1 and line.find(']') != -1 and line.find('[') != -1 and line.find('+') == -1 and line.find('*') == -1 and line.find('/') == -1:
+            function = "="
+            OutputString += IntegerArrayWrite(line, function)
+        elif line.find('printf') != -1 and line.find('[') == -1:
+            OutputString += PrintF(line)
+        elif line.find('printf') != -1 and line.find('[') != -1:
+            OutputString += IntegerArrayRead(line)
+
+    fp.close()
+    fp2.close()
+    fp3.close()
+
+    return
+
+def MainFunctionDeclaration():
+    return "\t.text\n\n\t.globl main\n\nmain:"
+
+def IntegerDeclaration(line):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList    
+    global RegisterToValueList
+    
+    newString = ""
+    
+    line = line.replace(',','')
+    line = line.replace(';','')
+    line = line.replace('int','')
+    
+    word = line.split()
+    
+    for i in word:
+        newRegister = RegisterList[ListTracker]
+        newVariable = i
+        
+        VariableToRegisterList[newVariable] = newRegister
+        RegisterToVariableList[newRegister] = newVariable
+        RegisterToValueList[newRegister] = 0
+        VariableToValueList[newVariable] = 0
+        
+        if ListTracker == 0:
+            newString += ("\n\tadd %s, $zero, $zero" % (newRegister))
+        else:
+            newString += ("\n\n\tadd %s, $zero, $zero" % (newRegister))
+            
+        ListTracker += 1
+        if(ListTracker > 18):
+            ListTracker = 0
+    
+    return newString
+
+def VariableInitialization(line):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList
+    global RegisterToValueList
+    
+    newString = ""
+
+    line = line.replace(';','')
+
+    word = line.split()
+
+    Value = word[2]
+    
+    Variable = word[0]
+    
+    newRegister = VariableToRegisterList.get(Variable,"")
+
+    RegisterToValueList[newRegister] = Value
+    VariableToValueList[Variable] = Value
+    
+    InitializationNumber = word[2]
+
+    newString = ("\n\n\tli %s, %s" % (newRegister,InitializationNumber))
+    
+    return newString
+
+def AdditionOperation(line):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList
+    global RegisterToValueList
+
+    NewString = ""
+
+    line = line.replace(';','')
+
+    word = line.split()
+
+    StorageVariable = word[0]
+
+    StorageRegister = VariableToRegisterList.get(StorageVariable,'')
+
+    AdditionVariable1 = word[2]
+    AdditionVariable2 = word[4]
+
+    AdditionRegister1 = VariableToRegisterList.get(AdditionVariable1,'')
+    AdditionRegister2 = VariableToRegisterList.get(AdditionVariable2,'')
+
+    NewValue2 = int(RegisterToValueList.get(AdditionRegister1,'0'))
+    NewValue3 = int(RegisterToValueList.get(AdditionRegister2,'0'))
+
+    NewValue1 = NewValue2 + NewValue3
+
+    RegisterToValueList[StorageRegister] = NewValue1
+    VariableToValueList[StorageVariable] = NewValue1
+
+    NewString = "\n\n\tadd %s, %s, %s" % (StorageRegister, AdditionRegister1, AdditionRegister2)
+    
+    return NewString
+
+def SubtractionOperation(line):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList
+    global RegisterToValueList
+
+    NewString = ""
+
+    line = line.replace(';','')
+
+    word = line.split()
+
+    StorageVariable = word[0]
+
+    StorageRegister = VariableToRegisterList.get(StorageVariable,'')
+
+    SubtractionVariable1 = word[2]
+    SubtractionVariable2 = word[4]
+
+    SubtractionRegister1 = VariableToRegisterList.get(SubtractionVariable1,'')
+    SubtractionRegister2 = VariableToRegisterList.get(SubtractionVariable2,'')
+
+    NewValue2 = int(RegisterToValueList.get(SubtractionRegister1,'0'))
+    NewValue3 = int(RegisterToValueList.get(SubtractionRegister2,'0'))
+
+    NewValue1 = NewValue2 - NewValue3
+
+    RegisterToValueList[StorageRegister] = NewValue1
+    VariableToValueList[StorageVariable] = NewValue1
+
+    NewString = "\n\n\tsub %s, %s, %s" % (StorageRegister, SubtractionRegister1, SubtractionRegister2)
+    
+    return NewString
+
+def MultiplicationOperation(line):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList
+    global RegisterToValueList
+
+    NewString = ""
+
+    line = line.replace(';','')
+
+    word = line.split()
+
+    StorageVariable = word[0]
+    
+    StorageRegister = VariableToRegisterList.get(StorageVariable,'')
+
+    MultiplicationVariable1 = word[2]
+    MultiplicationVariable2 = word[4]
+
+    MultiplicationRegister1 = VariableToRegisterList.get(MultiplicationVariable1,'')
+    MultiplicationRegister2 = VariableToRegisterList.get(MultiplicationVariable2,'')
+
+    NewValue2 = int(RegisterToValueList.get(MultiplicationRegister1,'0'))
+    NewValue3 = int(RegisterToValueList.get(MultiplicationRegister2,'0'))
+
+    NewValue1 = NewValue2 * NewValue3
+
+    RegisterToValueList[StorageRegister] = NewValue1
+    VariableToValueList[StorageVariable] = NewValue1
+
+    NewString = "\n\n\tmult %s, %s\n\tmflo %s" % (MultiplicationRegister1, MultiplicationRegister2, StorageRegister)
+
+    return NewString
+
+def DivisionOperation(line):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList
+    global RegisterToValueList
+
+    NewString = ""
+
+    line = line.replace(';','')
+
+    word = line.split()
+
+    StorageVariable = word[0]
+
+    StorageRegister = VariableToRegisterList.get(StorageVariable,'')
+
+    DivisionVariable1 = word[2]
+    DivisionVariable2 = word[4]
+
+    DivisionRegister1 = VariableToRegisterList.get(DivisionVariable1,'')
+    DivisionRegister2 = VariableToRegisterList.get(DivisionVariable2,'')
+
+    NewValue2 = int(RegisterToValueList.get(DivisionRegister1,'0'))
+    NewValue3 = int(RegisterToValueList.get(DivisionRegister2,'0'))
+
+    NewValue1 = NewValue2 / NewValue3
+
+    RegisterToValueList[StorageRegister] = NewValue1
+    VariableToValueList[StorageVariable] = NewValue1
+
+    NewString = "\n\n\tdiv %s, %s, %s" % (StorageRegister, DivisionRegister1, DivisionRegister2)
+    
+    return NewString
+
+def IntegerArrayDeclaration(line):
+    global ListTracker
+    global RegisterList
+    global ArrayRegister
+    
+    global arrayName
+
+    newString = ""
+
+    line = line.replace(';','')
+    line = line.replace('int','')
+    line = line.replace('[',' ')
+    line = line.replace(']','')
+    
+    word = line.split()
+
+    newRegister = RegisterList[ListTracker]
+    ListTracker += 1
+    if(ListTracker > 18):
+        ListTracker = 0
+    
+    newString += ("\n\n\tla %s, %s" % (newRegister, arrayName))
+
+    ArrayRegister = newRegister
+
+    return newString
+
+def ArraySpace(line):
+    newString = ""
+
+    line = line.replace(';','')
+    line = line.replace('int','')
+    line = line.replace('[',' ')
+    line = line.replace(']','')
+
+    word = line.split()
+
+    global arrayName
+    arrayName = word[0]
+    
+    num = 0
+    num = word[1]
+    num = int(num)
+    num = num * 4
+
+    global ArrayByteSize
+    ArrayByteSize = num
+
+    newString = ("\n%s: .space %d" % (arrayName,ArrayByteSize))
+
+    return newString
+
+def IntegerArrayWrite(line, function):
+    global ListTracker
+    global RegisterList
+    
+    global VariableToRegisterList
+    global RegisterToVariableList
+
+    global VariableToValueList
+    global RegisterToValueList
+
+    global ValueArray
+    global ValueArrayIterator
+
+    global ArrayByteIterator
+    global ArrayRegister
+
+    line = line.replace('[',' ')
+    line = line.replace(']','')
+    line = line.replace(';','')
+
+    word = line.split()
+
+    NewString = ""
+
+    if function == "+":
+        Variable1 = word[3]
+        Variable2 = word[5]
+
+        Value1 = int(VariableToValueList.get(Variable1,''))
+        Value2 = int(VariableToValueList.get(Variable2,''))
+
+        ValueArray[ValueArrayIterator] = Value1 + Value2
+        ValueArrayIterator += 1
+
+        Register1 = VariableToRegisterList.get(Variable1,'')
+        Register2 = VariableToRegisterList.get(Variable2,'')
+
+        NewRegister = RegisterList[ListTracker]
+        ListTracker += 1
+        if(ListTracker > 18):
+            ListTracker = 0
+
+        NewString += "\n\n\tadd %s, %s, %s" % (NewRegister, Register1, Register2)
+        NewString += "\n\n\tsw %s, %d(%s)" % (NewRegister, ArrayByteIterator, ArrayRegister)
+
+        ArrayByteIterator += 4
+
+        return NewString
+    elif function == "-":
+        Variable1 = word[3]
+        Variable2 = word[5]
+
+        Value1 = int(VariableToValueList.get(Variable1,''))
+        Value2 = int(VariableToValueList.get(Variable2,''))
+
+        ValueArray[ValueArrayIterator] = Value1 - Value2
+        ValueArrayIterator += 1
+
+        Register1 = VariableToRegisterList.get(Variable1,'')
+        Register2 = VariableToRegisterList.get(Variable2,'')
+
+        NewRegister = RegisterList[ListTracker]
+        ListTracker += 1
+        if(ListTracker > 18):
+            ListTracker = 0
+
+        NewString += "\n\n\tsub %s, %s, %s" % (NewRegister, Register1, Register2)
+        NewString += "\n\n\tsw %s, %d(%s)" % (NewRegister, ArrayByteIterator, ArrayRegister)
+
+        ArrayByteIterator += 4
+
+        return NewString
+    elif function == "=":
+        Variable = word[3]
+
+        Value = VariableToValueList.get(Variable,'')
+
+        ValueArray[ValueArrayIterator] = Value
+
+        Variable1 = word[3]
+
+        Value1 = VariableToValueList.get(Variable1,'')
+
+        Register1 = VariableToRegisterList.get(Variable1,'')
+
+        NewRegister = RegisterList[ListTracker]
+        ListTracker += 1
+        if(ListTracker > 18):
+            ListTracker = 0
+
+        NewString += "\n\n\tsw %s, %d(%s)" % (Register1, ArrayByteIterator, ArrayRegister)
+
+        ArrayByteIterator += 4
+
+        return NewString
+
+    return ""
+def IntegerArrayRead(line):
+    global ArrayByteSize
+    global ArrayRegister
+    global ListTracker
+    global RegisterList
+
+    NewString = ""
+
+    line = line.replace('(',' ')
+    line = line.replace(')','')
+    line = line.replace('[',' ')
+    line = line.replace(']','')
+    line = line.replace(';','')
+    line = line.replace(',',' ')
+
+    word = line.split()
+
+    Position = int(word[3])
+
+    ArrayOffset = Position * 4
+
+    NewRegister = RegisterList[ListTracker]
+    ListTracker += 1
+    if(ListTracker > 18):
+        ListTracker = 0
+
+    NewString += "\n\n\tlw %s, %d(%s)" % (NewRegister, ArrayOffset, ArrayRegister)
+    NewString += "\n\n\tli $v0, 1\n\tmove $a0, %s\n\tsyscall" % (NewRegister)
+
+    return NewString
+    
+
+def PrintF(line):
+    NewString = ""
+
+    line = line.replace('(',' ')
+    line = line.replace(')','')
+    line = line.replace(';','')
+    line = line.replace(',',' ')
+
+    word = line.split()
+
+    Variable = word[2]
+
+    Register = VariableToRegisterList.get(Variable,'')
+
+    NewString = "\n\n\tli $v0, 1\n\tmove $a0, %s\n\tsyscall" % (Register)
+    
+    return NewString
+
+main()
+
