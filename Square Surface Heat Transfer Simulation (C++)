@@ -1,0 +1,156 @@
+#include<iostream>
+#include<iomanip>
+#include<fstream>
+using namespace std;
+
+const in N = 11;        //re-define N in the source code for results with various square dimensions
+
+void init_block(float square[N][N], int N);
+void set_boundary(float square[N][N], int N, float heatSource);
+void print_block(float square[N][N], int N);
+float average_temp(float square[N][N], int N);
+void update_cells(float square[N][N], float temp[N][N], int N);
+
+int main(){
+  float heatSource, averageTemperature = 0;
+  int i, j, averageTempIteration = 0, centerCellIteration = 0, k = 0;
+  
+  ofstream outFile;
+  outFile.open("simulation_results.txt");
+  
+  float squareBlock[N][N], temp[N][N];
+  
+  init_block(squareBlock, N);
+  
+  cout << "Enter the temperature of the heat source: ";
+  cin >> heatSource;
+  
+  set_boundary(squareBlock, N, heatSource);
+  
+  print_block(squareBlock, N);
+  
+  while(averageTemperature < heatSource){
+    averageTemperature = average_temp(squareBlock, N);
+    
+    cout << "\nAVERAGE TEMPERATURE: " << fixed << showpoint << setprecision(6) << averageTemperature << "\n\n";
+    print_block(squareBlock, N);
+    
+    outFile << "\nAVERAGE TEMPERATURE: " << fixed << showpoint << setprecision(6) << averageTemperature << "\n\n";
+    
+    for(i = 0; i < N; i++){
+      for(j = 0; j < N; j++){
+        outFile << left << setw(10) << fixed << showpoint << setprecision(2) << squareBlock[i][j];
+        if(j == (N-1)){
+          outFile << "\n";
+        }
+      }
+    }
+    
+    if(squareBlock[5][5] == 0 && squareBlock[4][5] != 0){
+      centerCellIteration = k;
+    }
+    
+    if(averageTemperature < 60){
+      averageTempIteration = k;
+    }
+    
+    update_cells(squareBlock, temp, N);
+    
+    k++;
+  }
+
+  averageTempIteration += 1;
+  
+  cout << "\nAVERAGE TEMPERATURE: " << fixed << showpoint << setprecision(6) << averageTemperature << "\n\n";
+  print_block(squareBlock, N);
+  
+  cout << "ITERATIONS TO COMPLETE HEAT TRANSFER: " << k << endl;
+  
+  cout << "CENTER CELL IS ONLY CELL WITH TEMPERATURE OF ZERO DEGREES AT ITERATION: " << centerCellIteration << endl;
+  
+  cout << "AVERAGE TEMPERATURE OF CELLS BREACH 60 DEGREES AT ITERATION: " << averageTempIteration << endl;
+  
+  outFile.close();
+  
+  return 0;
+}
+
+void init_block(float square[N][N], int N){
+  for(int i = 0; i < N; i++){
+    for(int j = 0; j < N; j++){
+      square[i][j] = 0;
+    }
+  }
+  
+  return;
+}
+
+void set_boundary(float square[N][N], int N, float heatSource){
+  for(int i = 0; i < N; i++){
+    for(int j = 0; j < N; j++){
+      square[i][j] = heatSource;
+    }
+  }
+  
+  for(int i = 1; i < (N - 1); i++){
+    for(int j = 1; j < (N - 1); j++){
+      square[i][j] = 0.00;
+    }
+  }
+  
+  return;
+}
+
+void print_block(float square[N][N], int N){
+  for(int i = 0; i < N; i++){
+    for(int j = 0; j < N; j++){
+      cout << left << setw(10) << fixed << showpoint << setprecision(2) << square[i][j];
+      if(j == (N - 1)){
+        cout << "\n";
+      }
+    }
+  }
+  
+  return;
+  
+}
+
+float average_temp(float square[N][N], int N){
+  float averageTemperature, sum = 0;
+  
+  for(int i = 0; i < N; i++){
+    for(int j = 0; j < N; j++){
+      sum += square[i][j];
+    }
+  }
+  
+  averageTemperature = sum / (N*N);
+  
+  return averageTemperature;
+  
+}
+
+void update_cells(float square[N][N], float temp[N][N], int N){
+  float average;
+  
+  for(int i = 0; i < N; i++){
+    for(int j = 0; j < N; j++){
+      temp[i][j] = square[i][j];
+    }
+  }
+  
+  for(int i = 1; i < (N - 1); i++){
+    for(int j = 1; j < (N - 1); j++){
+      average = (square[i - 1][j] + square[i+1][j] + square[i][j - 1] + square[i][j + 1]) / 4.00;
+      temp[i][j] = average;
+    }
+  }
+  
+  for(int i = 0; i < N; i++){
+    for(int j = 0; j < N; j++){
+      square[i][j] = temp[i][j];
+    }
+  }
+  
+  return;
+}
