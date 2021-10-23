@@ -1,0 +1,99 @@
+def dec2bin(quotient, bits):
+    binary = ""
+    i = 0
+
+    print
+    print "Positive decimal integer detected... running dec2bin() function..." 
+    
+    if quotient < 0:            #if the decimal number is negative, call twosComp
+        binary = twosComp(quotient, bits)
+        return binary           #returns the two's complement of the positive version of the decimal
+    while i < bits:
+        remainder = quotient % 2
+        quotient = quotient / 2
+        binary = str(remainder) + binary
+        if(quotient == 0):
+            break
+        i += 1.0
+
+    binlist = list(binary)
+    if(len(binlist) < bits):
+        while(len(binlist) < bits):
+            binary = "0" + binary
+            binlist = binary
+
+    return binary           #returns the string containing the binary
+
+def twosComp(quotient, bits):
+    binary = ""
+    i = 0
+
+    quotient *= -1          #this makes the decimal number a positive integer
+    
+    while i < bits:         #determines the two's complement of the positive version
+        remainder = quotient % 2
+        quotient = quotient / 2
+        binary = str(remainder) + binary
+        if(quotient == 0):
+            break
+        i += 1.0
+
+    binlist = list(binary)  #concatenates zeroes if needed
+    if(len(binlist) < bits):
+        while(len(binlist) < bits):
+            binary = "0" + binary
+            binlist = binary
+
+    revlist = ""
+
+    for i in xrange(len(binlist)):    #this loop performs a bitwise flip
+        if(binlist[i] == "0"):
+            revlist += "1"
+        elif(binlist[i] == "1"):
+            revlist += "0"
+
+    print
+    print "Before two's complement: ", revlist
+
+    i = 1
+    finalList = ""
+    k = 1
+
+    if(int(revlist[len(binlist)-1]) + 1 == 1):      #case in which the first 
+        for i in xrange(len(revlist) - 1):
+            finalList += revlist[i]
+        print
+        print "Last digit value of zero detected... returning list with appended 1..."
+        finalList += "1"                            #digit is a zero, returns
+        return finalList                            #prior list with a one at the end
+
+    print
+    print "Final digit is not a zero after bitwise flip, performing arithmetic..."
+
+    while(i <= len(revlist)):                       #iterates through list backwards
+        if(int(revlist[len(revlist) - i]) + k == 2):#performing logical arithmetic
+            finalList = "0" + finalList             #and determining which digit to
+            i += 1                                  #append to the final binary list
+        elif(int(revlist[len(revlist) - i]) + k == 1):
+            finalList = "1" + finalList
+            i += 1
+            k -= 1
+        else:
+            finalList = revlist[len(revlist) - i] + finalList
+            i += 1
+
+    return finalList
+
+def main():
+    decimal = 0.00
+    binary = ""
+    decimal = input("Enter the decimal value you'd like to convert to binary: ")
+    nbits = input("Enter the size of the register to be used for storing the value: ") 
+    binary = dec2bin(decimal, nbits)
+
+    print
+    print "Final returned binary address:", binary
+
+    return 0
+
+main()
