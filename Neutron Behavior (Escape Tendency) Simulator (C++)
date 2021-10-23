@@ -4,7 +4,6 @@
 #include <fstream>
 #include <string>
 #include <math.h>
-
 using namespace std;
 
 int shieldThickness, maxChanges, direction, counter=0, totalMotions, totalChanges, i=0, previousDirection, forwardMotionTracker=0;
