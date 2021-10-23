@@ -1,0 +1,153 @@
+#include <iostream>
+#include <iomanip>
+#include <string>
+
+using namespace std;
+
+int main(){
+        int monthEntry;
+        char leapYear;
+        int weekEntry;
+        int monthDays;
+        string month;
+        string weekDay;
+        int i=1;
+
+        cout<<"Which month (1-12) would you like to print? ";
+        cin>>monthEntry;
+
+        cout<<"On which day of the week (1-7) does the first of the month lie? ";
+        cin>>weekEntry;
+
+        switch(monthEntry){
+                case 1:   month="January";
+                          monthDays=31;
+                          break;
+
+                case 2:   month="February";
+                          monthDays=28;
+                          break;
+
+                case 3:   month="March";
+                          monthDays=31;
+                          break;
+
+                case 4:   month="April";
+                          monthDays=30;
+                          break;
+
+                case 5:   month="May";
+                          monthDays=31;
+                          break;
+
+                case 6:   month="June";
+                          monthDays=30;
+                          break;
+
+                case 7:   month="July";
+                          monthDays=31;
+                          break;
+
+                case 8:   month="August";
+                          monthDays=31;
+                          break;
+
+                case 9:   month="September";
+                          monthDays=30;
+                          break;
+
+                case 10:  month="October";
+                          monthDays=31;
+                          break;
+
+                case 11:  month="November";
+                          monthDays=30;
+                          break;
+
+                case 12:  month="December";
+                          monthDays=31;
+                          break;
+
+                default : cout<<"Invalid month";
+                          monthDays=0;
+                          break;
+        }
+        if(monthEntry==2){
+                cout<<"Is it a leap year? Y/N: ";
+                cin>>leapYear;
+                switch (leapYear){
+                        case 'Y': monthDays=29;
+                                  break;
+
+                        case 'N': monthDays=28;
+                                  break;
+
+                        default : cout<<"Invalid leap year entry";
+                                  break;
+                }
+        }
+        int k;
+
+        switch(weekEntry){
+                case 1:  weekDay="Sunday";
+                         k=1;
+                         break;
+
+                case 2:  weekDay="Monday";
+                         k=2;
+                         break;
+
+                case 3:  weekDay="Tuesday";
+                         k=3;
+                         break;
+
+                case 4:  weekDay="Wednesday";
+                         k=4;
+                         break;
+
+                case 5:  weekDay="Thursday";
+                         k=5;
+                         break;
+
+                case 6:  weekDay="Friday";
+                         k=6;
+                         break;
+
+                case 7:  weekDay="Saturday";
+                         k=7;
+                         break;
+
+                default: cout<<"Invalid weekday";
+                         break;
+        }
+        cout<<"\n"<<setw(7)<<"Sun"<<setw(7)<<"Mon"<<setw(7)<<"Tue"<<setw(7)<<"Wed"<<setw(7)<<"Thu"<<setw(7)<<"Fri"<<setw(7)<<"Sat\n";
+
+        int j=1;
+
+        while(i<=monthDays){
+                if(j==1){
+                        cout<<setw((7*weekEntry))<<i;
+                        i=i+1;
+                        if(k==7){
+                                cout<<"\n";
+                                k=0;
+                        }
+                        k=k+1;
+                        j=0;
+                }
+                cout<<fixed<<setw(7);
+                cout<<i;
+
+                i=i+1;
+
+                if(k==7){
+                        cout<<"\n";
+                        k=0;
+                }
+
+                k=k+1;
+        }
+        cout<<"\n";
+
+        return 0;
+}
