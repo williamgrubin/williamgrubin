@@ -1,0 +1,182 @@
+def menu():
+    print
+    print "==============================="
+    print "|          MAIN MENU          |"
+    print "==============================="
+    print "\t1. CREATE DATABASE"
+    print "\t2. SEARCH DATABASE"
+    print "\t3. EDIT DATABASE"
+    print "\t4. ADD ITEMS"
+    print "\t5. DELETE ITEMS"
+    print "\t6. LIST ALL"
+    print "\t7. SAVE TO A FILE"
+    print "\t8. PRINT STATISTICS"
+    print "\t9. EXIT PROGRAM"
+    print
+    menuChoice=input("Enter a menu option [1-9]: ")
+    return menuChoice
+
+def main():
+    while True:
+        menuChoice=menu()
+        if(menuChoice==9):
+            print "\nExiting program..."
+            break
+        if(menuChoice==8):
+            statsDB(Dbase)
+        if(menuChoice==7):
+            saveDB(Dbase)
+        if(menuChoice==6):
+            listDB(Dbase)
+        if(menuChoice==5):
+            deleteDB(Dbase)
+        if(menuChoice==4):
+            addDB(Dbase)
+        if(menuChoice==3):
+            editDB(Dbase)
+        if(menuChoice==2):
+            searchDB(Dbase)
+        if(menuChoice==1):
+            Dbase=createDB()
+        
+def createDB():
+    Dbase={}
+    print
+    dataFile=raw_input("Enter the name of the file containing the data you'd like to store: ")
+    fp=open(dataFile,'r')
+    while True:
+        line=fp.readline()
+
+        if line=="":
+            break
+
+        strip=line.strip()
+        word=line.split()
+
+        key=word[0]
+        item=word[1]
+        Dbase[key]=item
+    return Dbase
+
+def searchDB(Dbase):
+    choice="Y"
+    while choice.upper()=="Y":
+        print
+        itemName=raw_input("Enter the name of the item you're looking for: ")
+        item=Dbase.get(itemName,"NULL")
+        if item!="NULL":
+            print
+            print "ITEM CONTAINED IN DATABASE"
+            print
+            print "ITEM: ",itemName," QUANTITY: ",item
+        else:
+            print
+            print "ITEM NOT CONTAINED IN DATABASE"
+        print
+        choice=raw_input("Continue querying database? (Y/N): ")
+    return
+
+def editDB(Dbase):
+    choice="Y"
+    while choice.upper()=="Y":
+        print
+        itemName=raw_input("Enter the name of the item you're looking for: ")
+        item=Dbase.get(itemName,"NULL")
+        if item!="NULL":
+            print
+            print "ITEM CONTAINED IN DATABASE"
+            print
+            print "ITEM: ",itemName," QUANTITY: ",item
+            print
+            newQuantity=input("Enter the updated quantity of the item: ")
+            Dbase[itemName]=newQuantity
+            print
+            print "ITEM CHANGED: ",itemName," NEW QUANTITY: ",Dbase[itemName]
+        else:
+            print
+            print "ITEM NOT CONTAINED IN DATABASE"
+        print
+        choice=raw_input("Continue editing database? (Y/N): ")
+    return
+
+def addDB(Dbase):
+    choice="Y"
+    while choice.upper()=="Y":
+        print
+        newItem=raw_input("Enter the name of the item you're adding: ")
+        print
+        newItemQuantity=input("Enter the quantity of the new item: ")
+        Dbase[newItem]=newItemQuantity
+        print
+        print "ITEM ADDED: ",newItem," ITEM QUANTITY: ",Dbase[newItem]
+        print
+        choice=raw_input("Continue adding to the database? (Y/N): ")
+    return
+
+def deleteDB(Dbase):
+    choice="Y"
+    while choice.upper()=="Y":
+        print
+        oldItem=raw_input("Enter the name of the item you're deleting: ")
+        Dbase.pop(oldItem,"NULL")
+        if oldItem=="NULL":
+            print
+            print "ITEM NOT CONTAINED IN DATABASE"
+        print
+        choice=raw_input("Continue removing from the database? (Y/N): ")
+    return
+
+def listDB(Dbase):
+    print
+    for key in Dbase:
+        print "ITEM: ",key," QUANTITY: ",Dbase[key]
+    print
+    return
+
+def saveDB(Dbase):
+    print
+    outputFile=raw_input("Enter the name of the file you're going to write to: ")
+    fp2=open(outputFile,'w')
+    
+    for key in Dbase:
+        fp2.write("%s%s\n" % (key,Dbase[key]))
+    return
+
+def statsDB(Dbase):
+    itemSum=0
+
+    itemMin=10000
+    minItem=""
+
+    itemMax=-10000
+    maxItem=""
+
+    i=0
+
+    for key in Dbase:
+        itemSum+=int(Dbase[key])
+
+        if(int(Dbase[key])>itemMax):
+            itemMax=int(Dbase[key])
+            maxItem=key
+
+        if(int(Dbase[key])<itemMin):
+            itemMin=int(Dbase[key])
+            minItem=key
+
+        i+=1
+
+    print
+    print "There are ", len(Dbase), " item types available in the database."
+    print
+    print "There are ", itemSum, "total items available in stock."
+    print
+    print "There are an average of ", round(itemSum/float(i),2), "items in stock."
+    print
+    print "The minimum amount of items on hand is ", itemMin, " and it is of the item ", minItem
+    print
+    print "The maximum amount of items on hand is ", itemMax, " and it is of the item ", maxItem
+    print
+    return
+
+main()
