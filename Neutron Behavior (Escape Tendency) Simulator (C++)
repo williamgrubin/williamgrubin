@@ -1,0 +1,120 @@
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+#include <fstream>
+#include <string>
+#include <math.h>
+
+using namespace std;
+
+int shieldThickness, maxChanges, direction, counter=0, totalMotions, totalChanges, i=0, previousDirection, forwardMotionTracker=0;
+int presentNeutrons, neutronsSimulated=0, escapedNeutrons=0, directionSum, motionSum;
+float directionAverage, motionAverage, percentageEscaped;
+char escapeStatus='N';
+string neutronOutcome;
+
+int main(){
+        ofstream neutronData;
+
+        neutronData.open("neutron_data_recordings.txt");
+
+        cout<<"Enter the thickness of the reactor's shielding: ";
+        cin>>shieldThickness;
+
+        cout<<"Enter the number of neutrons present: ";
+        cin>>presentNeutrons;
+
+        cout<<"Enter the maximum number of directional changes per neutron: ";
+        cin>>maxChanges;
+
+        neutronData<<setw(20)<<"Neutron ID"<<setw(20)<<"Directional Changes"<<setw(20)<<"Random Motions"<<setw(20)<<"Final Status"<<endl;
+        neutronData<<setw(20)<<"----------"<<setw(20)<<"-------------------"<<setw(20)<<"--------------"<<setw(20)<<"------------"<<endl;
+
+        while(neutronsSimulated<presentNeutrons){
+                totalMotions=0;
+
+                totalChanges=0;
+
+                previousDirection=0;
+
+                i=0;
+
+                escapeStatus='N';
+                cout<<"\nBeginning new neutron simulation..."<<endl;
+
+                do{
+                        direction=rand() % 4 + 1;
+
+                        if(counter>shieldThickness){
+                                escapedNeutrons+=1;
+                                escapeStatus='Y';
+                                forwardMotionTracker=counter;
+                                counter=0;
+                                cout<<"\nNeutron "<<neutronsSimulated+1<<" has escaped!\n";
+                                break;
+                        }
+                        else if(direction!=previousDirection&&direction==1){
+                                counter+=1;
+                                totalChanges+=1;
+                                i+=1;
+                                cout<<"\nNeutron "<<neutronsSimulated+1<<" has changed direction, and is now moving forward!\n";
+                        }
+                        else if(direction!=previousDirection&&direction==2){
+                                counter-=1;
+                                totalChanges+=1;
+                                i+=1;
+                                cout<<"\nNeutron "<<neutronsSimulated+1<<" has changed direction, and is now moving backwards!\n";
+                        }
+                        else if(direction!=previousDirection&&direction==3){
+                                totalChanges+=1;
+                                i+=1;
+                                cout<<"\nNeutron "<<neutronsSimulated+1<<" has changed direction, and is now moving left laterally!\n";
+                        }
+                        else if(direction!=previousDirection&&direction==4){
+                                totalChanges+=1;
+                                i+=1;
+                                cout<<"\nNeutron "<<neutronsSimulated+1<<" has changed direction, and is now moving right laterally!\n";
+                        }
+                        else if(direction==previousDirection){
+                                totalMotions+=1;
+                                cout<<"\nNeutron "<<neutronsSimulated+1<<" has not changed its direction!\n";
+                        }
+
+                        previousDirection=direction;
+                }while(i<maxChanges);
+
+                switch(escapeStatus){
+                        case 'Y': neutronOutcome="Escaped";
+                                  break;
+                        case 'N': neutronOutcome="Destroyed";
+                                  break;
+                        default : neutronOutcome="Destroyed";
+                                  break;
+                }
+
+                cout<<"\nNeutron "<<neutronsSimulated+1<<"'s simulation has been completed\n"<<endl;
+
+                directionSum+=totalChanges;
+                motionSum+=totalMotions;
+
+                neutronsSimulated+=1;
+
+                neutronData<<setw(20)<<neutronsSimulated<<setw(20)<<totalChanges<<setw(20)<<totalMotions<<setw(20)<<neutronOutcome<<endl;
+
+                forwardMotionTracker=0;
+        }
+
+        percentageEscaped=(escapedNeutrons*1.0)/(presentNeutrons*1.0)*100;
+
+        directionAverage=(directionSum*1.0)/(presentNeutrons*1.0);
+
+        motionAverage=(motionSum*1.0)/(presentNeutrons*1.0);
+
+        cout<<"\nNumber of escaped neutrons: "<<escapedNeutrons<<"\nPercent equivalency: "<<percentageEscaped<<"%"<<endl;
+        cout<<"\nTotal directional changes: "<<directionSum<<"\nAverage directional changes: ~"<<round(directionAverage)<<endl;
+        cout<<"\nTotal random motions: "<<motionSum<<"\nAverage random motions: ~"<<round(motionAverage)<<"\n"<<endl;
+
+        neutronData.close();
+
+        return 0;
+}
